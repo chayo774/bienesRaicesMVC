@@ -38,12 +38,34 @@ const registrar = async (req, res)=> {
         })
     }//min 2:35
 
+    //Alternativa p/ req.body.email - Extrayendo datos utilizando destructiring:
+    const {nombre, email, password}=req.body
+    //Verificar que el usuario no este duplicado
+    const existeUsuario = await Usuario.findOne({where:{email}})
+    if(existeUsuario){
+        return res.render('auth/registro',{
+            pagina:'Crear cuenta',
+            errores: [{msg:'El usuario ya esta registrado'}],
+            usuario:{
+                nombre: req.body.nombre,
+                email:req.body.email
+            }
+        })
+    }
 
+    // console.log(existeUsuario)
+
+    // return;
     //Las siguiente dos lineas crean un report json en el navegador.pero si no se utilizan la pagina se pega y no se crea el usuario.
-    const usuario = await Usuario.create(req.body)
-    res.json(usuario)
-   
+    // const usuario = await Usuario.create(req.body)
+    // res.json(usuario) ***(No se requiere por el momento.)
+    
+    //Almacenando un usuario en la base:
+    await Usuario.create({
+        nombre, email, password, token: 123
+    })
 }
+
 
 const formularioOlvidePassword = (req, res)=>{
     res.render('auth/olvide-password',{
