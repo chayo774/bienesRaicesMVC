@@ -1,6 +1,7 @@
 import { check, validationResult } from "express-validator"//Dependences:
 import Usuario from "../models/Usuario.js" //JS:
 import {generarId} from '../helpers/token.js'
+import { emailRegistro } from "../helpers/emails.js"
 
 const formularioLogin = (req, res)=>{
     res.render('auth/login', {
@@ -62,9 +63,16 @@ const registrar = async (req, res)=> {
     // res.json(usuario) ***(No se requiere por el momento.)
     
     //Almacenando un usuario en la base:
-    await Usuario.create({
+    const usuario = await Usuario.create({
         nombre, email, password, token: generarId()
     })
+    //Envia email de confirmación:
+    emailRegistro({
+        nombre:usuario.nombre,
+        email:usuario.email,
+        token:usuario.token
+    })
+
 
     //Mostrar mensaje de confirmacion
     res.render('templates/mensaje',{
