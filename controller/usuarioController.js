@@ -1,5 +1,7 @@
 import { check, validationResult } from "express-validator"//Dependences:
 import Usuario from "../models/Usuario.js" //JS:
+import {generarId} from '../helpers/token.js'
+import { emailRegistro } from "../helpers/emails.js"
 
 const formularioLogin = (req, res)=>{
     res.render('auth/login', {
@@ -38,12 +40,47 @@ const registrar = async (req, res)=> {
         })
     }//min 2:35
 
+    //Alternativa p/ req.body.email - Extrayendo datos utilizando destructiring:
+    const {nombre, email, password}=req.body
+    //Verificar que el usuario no este duplicado
+    const existeUsuario = await Usuario.findOne({where:{email}})
+    if(existeUsuario){
+        return res.render('auth/registro',{
+            pagina:'Crear cuenta',
+            errores: [{msg:'El usuario ya esta registrado'}],
+            usuario:{
+                nombre: req.body.nombre,
+                email:req.body.email
+            }
+        })
+    }
 
+    // console.log(existeUsuario)
+
+    // return;
     //Las siguiente dos lineas crean un report json en el navegador.pero si no se utilizan la pagina se pega y no se crea el usuario.
-    const usuario = await Usuario.create(req.body)
-    res.json(usuario)
-   
+    // const usuario = await Usuario.create(req.body)
+    // res.json(usuario) ***(No se requiere por el momento.)
+    
+    //Almacenando un usuario en la base:
+    const usuario = await Usuario.create({
+        nombre, email, password, token: generarId()
+    })
+    //Envia email de confirmación:
+    emailRegistro({
+        nombre:usuario.nombre,
+        email:usuario.email,
+        token:usuario.token
+    })
+
+
+    //Mostrar mensaje de confirmacion
+    res.render('templates/mensaje',{
+        pagina:'Cuenta creada correctamente',
+        mensaje:'Hemos enviado un email de confirmación, presiona en el enlace'
+    })
 }
+
 
 const formularioOlvidePassword = (req, res)=>{
     res.render('auth/olvide-password',{
